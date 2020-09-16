@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 2
+  tags:
+  - Cam1
+  - Cam2
+  - Cam3
+  - Cam4
+  - LightCam1
+  - LightCam2
+  - LightCam3
+  - LightCam4
+  - Pedestrian
+  - Vehicle
+  - NoCarSpawn
+  - NoCarSpawn LeftTurn
+  - StreetLampLight
+  - NoCarSpawn RightTurn
+  - Car
+  - Person
+  - Traffic Light
+  - Bench
+  - Potted Plant
+  - Fire Hydrant
+  - Umbrella
+  - Stop Sign
+  - Tree
+  - Bicycle
+  - Motorbike
+  - Traffic Sign
+  - Truck
+  - Bus
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - 
+  - 
+  - Pedestrian
+  - PostProcessing
+  - Vehicles
+  - Road Blocks
+  - UI 2
+  - Bench
+  - Traffic Light
+  - Bounding Box
+  - SimpleTrafficControllerSensorDetection
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0

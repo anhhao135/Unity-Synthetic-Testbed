@@ -10,10 +10,15 @@ public class skinnedmeshupdatetest : MonoBehaviour
     MeshCollider collider;
 
     // Start is called before the first frame update
-    void Start()
+
+    void update_skin()
     {
 
-        
+        if (this.gameObject.GetComponent<MeshCollider>() != null)
+        {
+            Destroy(this.gameObject.GetComponent<MeshCollider>());
+        }
+
         meshRenderer = GetComponent<SkinnedMeshRenderer>();
         collider = this.gameObject.AddComponent<MeshCollider>();
         collider.convex = false;
@@ -22,7 +27,10 @@ public class skinnedmeshupdatetest : MonoBehaviour
         meshRenderer.BakeMesh(colliderMesh);
         collider.sharedMesh = null;
         collider.sharedMesh = colliderMesh;
-
+    }
+    void Start()
+    {
+        update_skin();
     }
 
     // Update is called once per frame
@@ -30,6 +38,14 @@ public class skinnedmeshupdatetest : MonoBehaviour
     {
 
 
+    }
+
+    void FixedUpdate()
+    {
+        if (Mathf.RoundToInt(Time.fixedTime / Time.fixedDeltaTime) % 200 == 0)
+        {
+            update_skin();
+        }
     }
 }
 

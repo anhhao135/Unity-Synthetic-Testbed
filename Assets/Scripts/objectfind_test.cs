@@ -37,35 +37,48 @@ public class objectfind_test : MonoBehaviour
     void FixedUpdate()
     {
 
-        if (Mathf.RoundToInt(Time.fixedTime / Time.fixedDeltaTime) == 5)
+        try
         {
-            meshRenderers = FindObjectsOfType(typeof(MeshRenderer));
-
-            foreach (Object meshRenderer in meshRenderers)
+            if (Mathf.RoundToInt(Time.fixedTime / Time.fixedDeltaTime) == 2)
             {
-                MeshRenderer mr = (MeshRenderer)meshRenderer;
 
-                if (mr.gameObject.GetComponent<MeshCollider>() == null && mr.gameObject.GetComponent<BoxCollider>() == null)
+                Debug.Log("run");
+                meshRenderers = FindObjectsOfType(typeof(MeshRenderer));
+
+                foreach (Object meshRenderer in meshRenderers)
                 {
-                    MeshCollider mc = mr.gameObject.AddComponent<MeshCollider>();
-                    mc.convex = false;
+                    MeshRenderer mr = (MeshRenderer)meshRenderer;
+
+                    if (mr.gameObject.GetComponent<MeshCollider>() == null && mr.gameObject.GetComponent<BoxCollider>() == null)
+                    {
+                        MeshCollider mc = mr.gameObject.AddComponent<MeshCollider>();
+                        mc.convex = false;
+                        mc.isTrigger = true;
+                    }
+                        
+                    if (mr.gameObject.GetComponent<MeshCollider>() != null)
+                    {
+                        mr.gameObject.GetComponent<MeshCollider>().convex = true;
+                    }
+
                 }
 
-            }
+                skinRenderers = FindObjectsOfType(typeof(SkinnedMeshRenderer));
+                foreach (Object skinRenderer in skinRenderers)
+                {
+                    SkinnedMeshRenderer mr = (SkinnedMeshRenderer)skinRenderer;
+                    skinnedmeshupdatetest mc = mr.gameObject.AddComponent<skinnedmeshupdatetest>();
 
-            skinRenderers = FindObjectsOfType(typeof(SkinnedMeshRenderer));
-            foreach (Object skinRenderer in skinRenderers)
-            {
-                SkinnedMeshRenderer mr = (SkinnedMeshRenderer)skinRenderer;
-                skinnedmeshupdatetest mc = mr.gameObject.AddComponent<skinnedmeshupdatetest>();
-
+                }
             }
         }
 
-        if (Mathf.RoundToInt(Time.fixedTime / Time.fixedDeltaTime) % 20 == 0)
+        catch (System.Exception e)
         {
-           
+            
         }
-        
+            
+
+
     }
 }

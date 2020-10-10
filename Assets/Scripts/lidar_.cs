@@ -30,6 +30,7 @@ public class lidar_ : MonoBehaviour
     private List<RenderTexture> camRenderTextures = new List<RenderTexture>();
     public int currentRevolutionFloored;
     private int revolutionImageTaken;
+    public bool toggleTRSPerRevolution = true; //toggle TRS matrix of lidar base for every complete revolution
 
     public int captureFrames; //user specified
     public int capturedFrames;
@@ -45,6 +46,7 @@ public class lidar_ : MonoBehaviour
 
     public bool toggleXVIZFormat = false;
     public bool toggleRGBDCameraCapture = false;
+    public bool toggleBINFormat = true;
 
     private IDictionary<int, List<float[]>> perRevolutionVelodynePoints = new Dictionary<int, List<float[]>>(); // this dictionary will store the csv string builder for each revolution floored
 
@@ -61,6 +63,8 @@ public class lidar_ : MonoBehaviour
                                                                                         //[objecttype,h,w,l,firstframe]
 
     public IDictionary<int, object[]> perRevolutionTracklets = new Dictionary<int, object[]>(); //store tracklets unique per revolution to then be stored in trackletDynamic; this is cleared every new revolution
+
+    private List<String> TRS_String_List = new List<String>(); //list storing all 4x4 matrix TRS in string form
 
     private struct lidarChannel
     {
@@ -162,7 +166,7 @@ public class lidar_ : MonoBehaviour
 
         //Time.captureDeltaTime = 0.01f;
         Time.timeScale = 1f; //controls in game fictional time scale. can force physics engine to go slower or faster, independent of real life time
-        physicsUpdatePeriod = 1f / 10000f; //240hz
+        physicsUpdatePeriod = 1f / 500f; //240hz
         sessionDir = Directory.CreateDirectory(string.Format("Session_{0:yyyy-MM-dd_hh-mm-ss-tt}", DateTime.Now) + "_" + lidarName); //create session directory unique to start system time
         veloRotationIncrement = veloRPS * physicsUpdatePeriod * 360f; //convert revolution to full rotation degrees of 360. this is azimuth angular resolution
 
@@ -433,6 +437,14 @@ public class lidar_ : MonoBehaviour
 
         if (currentRevolutionFloored >= 0 && currentRevolutionFloored != revolutionImageTaken) //this will occur everytime a new revolution is reached
         {
+
+            if (toggleTRSPerRevolution == true)
+            {
+                Matrix4x4 lidar_TRS = Matrix4x4.TRS(lidarBaseTransform.position, lidarBaseTransform.rotation, lidarBaseTransform.lossyScale); //lidar transformation from model space to world space; TRSlidar * local lidar = world space lidar)
+                TRS_String_List.Add(formatMatrixtoString(lidar_TRS));
+            }
+
+
             if (currentRevolutionFloored > 0) //only triggered once the first lidar spin is passed ie once the first .bin file is logged
             {
                 foreach (KeyValuePair<int, object[]> revolution in perRevolutionTracklets) //iterate through per revolution tracklets
@@ -540,20 +552,58 @@ public class lidar_ : MonoBehaviour
 
         velodyne_binaries_dir = Directory.CreateDirectory(Path.Combine(sessionDir.Name, velodyneDirName + "/data"));
 
+        DirectoryInfo velodyne_TRS_dir = Directory.CreateDirectory(Path.Combine(sessionDir.Name, velodyneDirName + "/TRS_Matrices"));
+
         foreach (KeyValuePair<int, List<float[]>> revolution in perRevolutionVelodynePoints) //iterate through dictionary of points and save each list's arrays as binary
         {
-            string fileName = Path.Combine(sessionDir.ToString(), velodyne_binaries_dir.FullName + "/" + revolution.Key.ToString().PadLeft(10, '0') + ".bin"); //total width is 10 to match kitti standard
 
-            using (BinaryWriter binWriter = new BinaryWriter(File.Open(fileName, FileMode.Create)))
+
+            System.IO.File.WriteAllText(Path.Combine(velodyne_TRS_dir.FullName, revolution.Key.ToString().PadLeft(10, '0') + ".csv"), TRS_String_List[revolution.Key]); //save TRS for each revolution
+
+            if (toggleBINFormat == true) //binary pointcloud
             {
-                foreach (float[] floatArray in revolution.Value) //iterate through arrays of list
+                string fileName = Path.Combine(sessionDir.ToString(), velodyne_binaries_dir.FullName + "/" + revolution.Key.ToString().PadLeft(10, '0') + ".bin"); //total width is 10 to match kitti standard
+
+                using (BinaryWriter binWriter = new BinaryWriter(File.Open(fileName, FileMode.Create)))
                 {
-                    foreach (float arrayValue in floatArray)
+                    foreach (float[] floatArray in revolution.Value) //iterate through arrays of list
                     {
-                        binWriter.Write(arrayValue); //iterate through each array value and write to binary
+                        foreach (float arrayValue in floatArray)
+                        {
+                            binWriter.Write(arrayValue); //iterate through each array value and write to binary
+                        }
                     }
                 }
+            } 
+
+
+
+            else //.ply format 
+            {
+
+                string fileName = Path.Combine(sessionDir.ToString(), velodyne_binaries_dir.FullName + "/" + revolution.Key.ToString().PadLeft(10, '0') + ".ply"); //total width is 10 to match kitti standard
+
+                StringBuilder plyBuilder = new StringBuilder();
+                plyBuilder.AppendLine("ply");
+                plyBuilder.AppendLine("format ascii 1.0");
+                plyBuilder.AppendLine("element vertex " + revolution.Value.Count);
+                plyBuilder.AppendLine("property float x");
+                plyBuilder.AppendLine("property float y");
+                plyBuilder.AppendLine("property float z");
+                plyBuilder.AppendLine("end_header"); //boilerplate header for ply
+
+                foreach (float[] floatArray in revolution.Value) //iterate through arrays of list
+                {
+                    plyBuilder.AppendLine(floatArray[0] + " " + floatArray[1] + " " + floatArray[2]); //append line "x y z"
+                }
+
+                using (System.IO.StreamWriter ply_file = new System.IO.StreamWriter(fileName))
+                {
+                    ply_file.WriteLine(plyBuilder.ToString()); //convert string builder to ply file
+                }
+
             }
+
         }
 
         foreach (KeyValuePair<int, object[]> revolution in trackletStatic) //iterate through dictionary of points and save each list's arrays as binary

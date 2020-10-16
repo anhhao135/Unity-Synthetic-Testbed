@@ -105,10 +105,17 @@ public class PedestrianControl : MonoBehaviour
 
     private void Update()
     {
-        if (Time.frameCount % 40 == 0 && Random.Range(0f,1f) < 0.1f)
+
+    }
+
+    private void FixedUpdate()
+    {
+        if (Random.Range(0f, 1f) < 0.001f || navmeshagent.velocity == Vector3.zero)
         {
-            travelling = false;
+            travelling = false; //randomizes decision to make new target waypoint
         }
+
+        
     }
     private void LateUpdate()
     {

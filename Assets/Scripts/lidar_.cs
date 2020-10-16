@@ -39,6 +39,10 @@ public class lidar_ : MonoBehaviour
 
     public List<DirectoryInfo> imageDirectories = new List<DirectoryInfo>();
 
+    private DirectoryInfo velodyne_binaries_dir;
+
+    private DirectoryInfo velodyne_TRS_dir;
+
     public bool enable180Lidar;
     public string lidarName;
 
@@ -166,7 +170,7 @@ public class lidar_ : MonoBehaviour
 
         //Time.captureDeltaTime = 0.01f;
         Time.timeScale = 1f; //controls in game fictional time scale. can force physics engine to go slower or faster, independent of real life time
-        physicsUpdatePeriod = 1f / 500f; //240hz
+        physicsUpdatePeriod = 1f / 3500f; //240hz
         sessionDir = Directory.CreateDirectory(string.Format("Session_{0:yyyy-MM-dd_hh-mm-ss-tt}", DateTime.Now) + "_" + lidarName); //create session directory unique to start system time
         veloRotationIncrement = veloRPS * physicsUpdatePeriod * 360f; //convert revolution to full rotation degrees of 360. this is azimuth angular resolution
 
@@ -246,6 +250,12 @@ public class lidar_ : MonoBehaviour
         {
             lidarTimestampsStringBuilder.Add(new StringBuilder()); //add 3 stringbuilders to lidar's; this represents timestamps.txt | timestamps_start.txt | timestamps_end.txt
         }
+
+
+
+        velodyne_binaries_dir = Directory.CreateDirectory(Path.Combine(sessionDir.Name, velodyneDirName + "/data")); //create velodyne directory
+
+        velodyne_TRS_dir = Directory.CreateDirectory(Path.Combine(sessionDir.Name, velodyneDirName + "/TRS_Matrices")); //create TRS matrices directory
     }
 
     public void Update()
@@ -386,16 +396,20 @@ public class lidar_ : MonoBehaviour
                     Vector3 randomAccuracyNoiseVector = new Vector3(UnityEngine.Random.Range(-accuracyMargin, accuracyMargin), UnityEngine.Random.Range(-accuracyMargin, accuracyMargin), UnityEngine.Random.Range(-accuracyMargin, accuracyMargin)); //generates noise vector in all three axis
                     laserHitPoint += randomAccuracyNoiseVector; //add noise to point
 
+
+                    /*
                     float x = laserHitPoint.z;
                     float y = -laserHitPoint.x;
                     float z = laserHitPoint.y; //convert to kitti axis
 
-                    /*
+                    */
+
+
+
                     float x = laserHitPoint.x;
                     float y = laserHitPoint.y;
                     float z = laserHitPoint.z; //no conversion
 
-                    */
 
                     if (toggleXVIZFormat == false)
                     {
@@ -442,6 +456,15 @@ public class lidar_ : MonoBehaviour
             {
                 Matrix4x4 lidar_TRS = Matrix4x4.TRS(lidarBaseTransform.position, lidarBaseTransform.rotation, lidarBaseTransform.lossyScale); //lidar transformation from model space to world space; TRSlidar * local lidar = world space lidar)
                 TRS_String_List.Add(formatMatrixtoString(lidar_TRS));
+            }
+
+            else
+            {
+                if (currentRevolutionFloored == 1)
+                {
+                    Matrix4x4 lidar_TRS = Matrix4x4.TRS(lidarBaseTransform.position, lidarBaseTransform.rotation, lidarBaseTransform.lossyScale); //lidar transformation from model space to world space; TRSlidar * local lidar = world space lidar)
+                    TRS_String_List.Add(formatMatrixtoString(lidar_TRS));
+                }
             }
 
 
@@ -499,19 +522,79 @@ public class lidar_ : MonoBehaviour
                 }
             }
 
-            /*
-            for (int i = 0; i < RGB_Cameras.Count; i++)
-            {
-                CamCapture(RGB_Cameras[i], imageDirectories[i]);
-            } //capture all cameras on a new revolution once
-
-            */
-
-            //lidarTRS = Matrix4x4.TRS(lidarBaseTransform.position, lidarBaseTransform.rotation, lidarBaseTransform.lossyScale); //lidar transformation from model space to world space; TRSlidar * local lidar = world space lidar)
-
-            //System.IO.File.WriteAllText(Path.Combine(sessionDir.FullName, currentRevolutionFloored + "lidarTRSMatrix.csv"), formatMatrixtoString(lidarTRS)); //save cam projection matrix
-
             revolutionImageTaken = currentRevolutionFloored;
+
+            foreach (KeyValuePair<int, List<float[]>> revolution in perRevolutionVelodynePoints) //iterate through dictionary of points and save each list's arrays as binary
+            {
+
+                try
+                {
+                    System.IO.File.WriteAllText(Path.Combine(velodyne_TRS_dir.FullName, revolution.Key.ToString().PadLeft(10, '0') + ".csv"), TRS_String_List[revolution.Key]); //save TRS for each revolution
+                }
+
+                catch (Exception e)
+                {
+                    //incase where there is only one trs, there will be error but just pass it
+                }
+
+
+                if (toggleBINFormat == true) //binary pointcloud
+                {
+                    string fileName = Path.Combine(sessionDir.ToString(), velodyne_binaries_dir.FullName + "/" + revolution.Key.ToString().PadLeft(10, '0') + ".bin"); //total width is 10 to match kitti standard
+
+                    using (BinaryWriter binWriter = new BinaryWriter(File.Open(fileName, FileMode.Create)))
+                    {
+                        foreach (float[] floatArray in revolution.Value) //iterate through arrays of list
+                        {
+                            foreach (float arrayValue in floatArray)
+                            {
+                                binWriter.Write(arrayValue); //iterate through each array value and write to binary
+                            }
+                        }
+                    }
+                }
+
+
+
+                else //.ply format 
+                {
+
+                    string fileName = Path.Combine(sessionDir.ToString(), velodyne_binaries_dir.FullName + "/" + revolution.Key.ToString().PadLeft(10, '0') + ".ply"); //total width is 10 to match kitti standard
+
+                    StringBuilder plyBuilder = new StringBuilder();
+                    plyBuilder.AppendLine("ply");
+                    plyBuilder.AppendLine("format ascii 1.0");
+                    plyBuilder.AppendLine("element vertex " + revolution.Value.Count);
+                    plyBuilder.AppendLine("property float x");
+                    plyBuilder.AppendLine("property float y");
+                    plyBuilder.AppendLine("property float z");
+                    plyBuilder.AppendLine("end_header"); //boilerplate header for ply
+
+                    foreach (float[] floatArray in revolution.Value) //iterate through arrays of list
+                    {
+                        plyBuilder.AppendLine(floatArray[0] + " " + floatArray[1] + " " + floatArray[2]); //append line "x y z"
+                    }
+
+                    using (System.IO.StreamWriter ply_file = new System.IO.StreamWriter(fileName))
+                    {
+                        ply_file.WriteLine(plyBuilder.ToString()); //convert string builder to ply file
+                    }
+
+                }
+
+      
+            }
+
+            perRevolutionVelodynePoints.Clear(); //after points saved, reset dictionary of velodyne points for memory; 
+            trackletDynamic.Clear();
+            trackletStatic.Clear();
+            perRevolutionTracklets.Clear();
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+
+
+
         }
     }
 
@@ -538,7 +621,7 @@ public class lidar_ : MonoBehaviour
 
     public void OnApplicationQuit() //this is where all stringbuilders and files are saved
     {
-        
+        /*
         
         if (toggleXVIZFormat == false)
         {
@@ -558,7 +641,16 @@ public class lidar_ : MonoBehaviour
         {
 
 
-            System.IO.File.WriteAllText(Path.Combine(velodyne_TRS_dir.FullName, revolution.Key.ToString().PadLeft(10, '0') + ".csv"), TRS_String_List[revolution.Key]); //save TRS for each revolution
+            try
+            {
+                System.IO.File.WriteAllText(Path.Combine(velodyne_TRS_dir.FullName, revolution.Key.ToString().PadLeft(10, '0') + ".csv"), TRS_String_List[revolution.Key]); //save TRS for each revolution
+            }
+            
+            catch (Exception e)
+            {
+                //incase where there is only one trs, there will be error but just pass it
+            }
+            
 
             if (toggleBINFormat == true) //binary pointcloud
             {
@@ -676,7 +768,7 @@ public class lidar_ : MonoBehaviour
 #endregion
 
 
-
+        */
 
 
         Debug.Log("Time of session: " + Time.realtimeSinceStartup);

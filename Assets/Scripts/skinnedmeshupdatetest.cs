@@ -16,6 +16,7 @@ public class skinnedmeshupdatetest : MonoBehaviour
 
         if (this.gameObject.GetComponent<MeshCollider>() != null)
         {
+            Destroy(this.gameObject.GetComponent<MeshCollider>().sharedMesh);
             Destroy(this.gameObject.GetComponent<MeshCollider>());
         }
 
@@ -25,7 +26,6 @@ public class skinnedmeshupdatetest : MonoBehaviour
 
         Mesh colliderMesh = new Mesh();
         meshRenderer.BakeMesh(colliderMesh);
-        collider.sharedMesh = null;
         collider.sharedMesh = colliderMesh;
     }
     void Start()
@@ -42,10 +42,13 @@ public class skinnedmeshupdatetest : MonoBehaviour
 
     void FixedUpdate()
     {
+        
         if (Mathf.RoundToInt(Time.fixedTime / Time.fixedDeltaTime) % 200 == 0)
         {
             update_skin();
         }
+
+        
     }
 }
 

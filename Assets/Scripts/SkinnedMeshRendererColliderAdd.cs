@@ -10,6 +10,8 @@ public class SkinnedMeshRendererColliderAdd : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+
+        /*
         SkinnedMeshRenderer[] renderers;
 
         renderers = GetComponentsInChildren<SkinnedMeshRenderer>();
@@ -18,6 +20,8 @@ public class SkinnedMeshRendererColliderAdd : MonoBehaviour
         {
             renderer.gameObject.AddComponent<skinnedmeshupdatetest>();
         }
+
+        */
 
     }
 

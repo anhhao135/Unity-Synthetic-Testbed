@@ -21,16 +21,7 @@ public class RootObject : MonoBehaviour
 
     void Start()
     {
-        className = this.gameObject.tag;
-
         uniqueID = Mathf.Abs(GetInstanceID());
-
-
-    }
-    void FixedUpdate()
-    {
-
-
 
         if (GetComponent<BoxCollider>() != null)
         {
@@ -60,17 +51,48 @@ public class RootObject : MonoBehaviour
             boundingBoxYSize = Vector3.Magnitude(pts3D[3] - pts3D[1]); ;
             boundingBoxZSize = Vector3.Magnitude(pts3D[1] - pts3D[0]); ;
 
-
         }
-
-
 
         boundingBoxForwardDirectionInWorld = transform.forward;
 
         boundingBoxCenterWorldSpace = transform.TransformPoint(boundingBoxCenter);
+    }
+    void FixedUpdate()
+    {
 
+        if (GetComponent<BoxCollider>() != null)
+        {
+            BoxCollider col = GetComponent<BoxCollider>();
 
+            Vector3[] pts3D = new Vector3[8];
 
+            var trans = col.transform;
+            var min_ = col.center - col.size * 0.5f;
+            var max_ = col.center + col.size * 0.5f;
+
+            Bounds b = col.bounds;
+
+            pts3D[0] = trans.TransformPoint(new Vector3(min_.x, min_.y, min_.z));
+            pts3D[1] = trans.TransformPoint(new Vector3(min_.x, min_.y, max_.z));
+            pts3D[2] = trans.TransformPoint(new Vector3(min_.x, max_.y, min_.z));
+            pts3D[3] = trans.TransformPoint(new Vector3(min_.x, max_.y, max_.z));
+            pts3D[4] = trans.TransformPoint(new Vector3(max_.x, min_.y, min_.z));
+            pts3D[5] = trans.TransformPoint(new Vector3(max_.x, min_.y, max_.z));
+            pts3D[6] = trans.TransformPoint(new Vector3(max_.x, max_.y, min_.z));
+            pts3D[7] = trans.TransformPoint(new Vector3(max_.x, max_.y, max_.z));
+
+            BoundingBox_WorldCoord = pts3D;
+
+            boundingBoxCenter = col.center;
+            boundingBoxXSize = Vector3.Magnitude(pts3D[5] - pts3D[1]);
+            boundingBoxYSize = Vector3.Magnitude(pts3D[3] - pts3D[1]); ;
+            boundingBoxZSize = Vector3.Magnitude(pts3D[1] - pts3D[0]); ;
+
+        }
+
+        boundingBoxForwardDirectionInWorld = transform.forward;
+
+        boundingBoxCenterWorldSpace = transform.TransformPoint(boundingBoxCenter);
 
     }
 

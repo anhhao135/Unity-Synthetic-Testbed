@@ -24,7 +24,7 @@ public class Guassian_Distribution : MonoBehaviour
 
         
         float mean = 0f;
-        float stdDev = 5f / 3f;
+        float stdDev = 1000f;
         float u1 = Random.Range(0f, 1f); //uniform(0,1] random doubles
         float u2 = Random.Range(0f, 1f);
         float randStdNormal = Mathf.Sqrt(-2.0f * Mathf.Log(u1)) * Mathf.Sin(2.0f * Mathf.PI * u2); //random normal(0,1)

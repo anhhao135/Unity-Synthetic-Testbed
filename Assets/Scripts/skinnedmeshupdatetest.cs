@@ -42,11 +42,14 @@ public class skinnedmeshupdatetest : MonoBehaviour
 
     void FixedUpdate()
     {
+        /*
         
         if (Mathf.RoundToInt(Time.fixedTime / Time.fixedDeltaTime) % 200 == 0)
         {
             update_skin();
         }
+
+        */
 
         
     }

@@ -4,8 +4,12 @@
 #
 
 
-!Assets/
 Assets/*
+!Assets/Scripts/
+!Assets/Generation_Platform_2/
+Assets/Generation_Platform_2/*
+!Assets/Generation_Platform_2/Scripts/
+
 
 
 !Assets/Scripts/
@@ -70,4 +74,3 @@ sysinfo.txt
 
 # Crashlytics generated file
 crashlytics-build.properties
-
